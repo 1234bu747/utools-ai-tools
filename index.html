@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT</title>
+    <link rel="stylesheet" href="css/default.min.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <link rel="stylesheet" href="css/markdown-body.css">
+</head>
+<body spellcheck="false">
+    <!-- 认证模态框 -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-container">
+            <h2>登录</h2>
+            <p class="auth-description">请输入账号和密码以继续</p>
+            
+            <div class="auth-form">
+                <div class="form-group">
+                    <label for="conversationId">账号</label>
+                    <input 
+                        type="text" 
+                        id="conversationId" 
+                        placeholder="请输入账号"
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="authToken">密码</label>
+                    <input 
+                        type="password" 
+                        id="authToken" 
+                        placeholder="请输入密码"
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <div class="auth-error" id="authError"></div>
+                
+                <button class="auth-submit-btn" id="authSubmitBtn" onclick="submitAuth()">
+                    <span id="authBtnText">确认</span>
+                    <span class="auth-loading" id="authLoading" style="display: none;">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+ 
+    <div class="app-container" id="appContainer" style="display: none;">
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 顶部工具栏 -->
+            <div class="top-bar">
+                <div style="font-size: 18px; font-weight: 600;">ChatGPT</div>
+                <div class="top-bar-actions">
+                    <button class="logout-btn" onclick="logout()" title="退出登录">退出</button>
+                </div>
+            </div>
+
+            <!-- 聊天消息区域 -->
+            <div class="chat-messages" id="chatMessages">
+                <!-- 消息将通过JavaScript动态生成 -->
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="input-area">
+                <div class="input-container">
+                    <!-- 模型选择器 -->
+                    <div class="model-selector-container">
+                        <button class="model-btn blue" data-model="GPT5Chat">GPT5 Chat</button>
+                        <button class="model-btn gray" data-model="claude">claude3.7</button>
+                        <button class="model-btn green" data-model="gemini">gemini2.5 pro</button>
+                        <button class="model-btn orange" data-model="o3">o3</button>
+                        <button class="model-btn pink" data-model="image">Image</button>
+                    </div>
+                    
+                    <div class="input-wrapper" id="inputWrapper">
+                        <textarea 
+                            id="messageInput" 
+                            placeholder="问我任何问题 (Enter 发送, Shift + Enter 换行)"
+                            rows="1"
+                        ></textarea>
+                        <label class="switch-inline">
+                            <input type="checkbox" id="toggleContextButton">
+                            <span class="slider-inline round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录选择弹窗 -->
+    <div class="history-select-overlay" id="historySelectOverlay" style="display: none;">
+        <div class="history-select-modal">
+            <div class="history-select-header">
+                <h3>选择追问问题</h3>
+                <button class="close-btn" onclick="closeHistorySelect()">✕</button>
+            </div>
+            <div class="history-select-content">
+                <div class="history-select-list" id="historySelectList">
+                    <!-- 历史记录列表将通过JavaScript动态生成 -->
+                </div>
+            </div>
+            <div class="history-select-footer">
+                <button class="cancel-btn" onclick="closeHistorySelect()">取消</button>
+                <button class="confirm-btn" onclick="confirmHistorySelect()">确认</button>
+            </div>
+        </div>
+    </div>
+    <!-- 通用确认弹窗 -->
+    <div class="confirm-overlay" id="confirmOverlay" style="display: none;">
+        <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
+            <div class="confirm-header">
+                <h3 class="confirm-title" id="confirmTitle"><span class="confirm-icon" id="confirmIcon">⚠️</span>确认操作</h3>
+                <button class="close-btn" id="confirmCloseBtn" aria-label="关闭">✕</button>
+            </div>
+            <div class="confirm-content">
+                <p class="confirm-message" id="confirmMessage">确定要执行此操作吗？</p>
+            </div>
+            <div class="confirm-footer">
+                <button class="cancel-btn" id="confirmCancelBtn">取消</button>
+                <button class="confirm-btn" id="confirmConfirmBtn">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/markdown-it.min.js"></script>
+    <script src="js/highlight.min.js"></script>
+    <script src="js/clipboard.min.js"></script>
+    <script src="js/chat.js"></script>
+</body>
+</html>
