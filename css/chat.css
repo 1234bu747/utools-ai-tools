@@ -318,6 +318,34 @@ body {
     padding: 4px 8px;
 }
 
+.reply-limit-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.reply-limit-selector select {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-darker);
+    color: var(--text-primary);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.reply-limit-selector select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.15);
+}
+
+.reply-limit-selector label {
+    white-space: nowrap;
+}
+
 .model-btn {
     padding: 8px 16px;
     border: none;
@@ -426,8 +454,10 @@ body {
 
 .input-actions {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     align-items: center;
+    flex-wrap: wrap;
+    margin-left: 8px;
 }
 
 .action-btn {

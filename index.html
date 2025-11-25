@@ -72,10 +72,9 @@
                     <!-- 模型选择器 -->
                     <div class="model-selector-container">
                         <button class="model-btn blue" data-model="GPT5Chat">GPT5 Chat</button>
-                        <button class="model-btn gray" data-model="claude">claude3.7</button>
+                        <button class="model-btn gray" data-model="GPT5_1">GPT5.1</button>
                         <button class="model-btn green" data-model="gemini">gemini2.5 pro</button>
                         <button class="model-btn orange" data-model="o3">o3</button>
-                        <button class="model-btn pink" data-model="image">Image</button>
                     </div>
                     
                     <div class="input-wrapper" id="inputWrapper">
@@ -84,10 +83,24 @@
                             placeholder="问我任何问题 (Enter 发送, Shift + Enter 换行)"
                             rows="1"
                         ></textarea>
-                        <label class="switch-inline">
-                            <input type="checkbox" id="toggleContextButton">
-                            <span class="slider-inline round"></span>
-                        </label>
+                        <div class="input-actions">
+                            <div class="reply-limit-selector">
+                                <label for="replyLimitSelect">回复限制</label>
+                                <select id="replyLimitSelect">
+                                    <option value="">无</option>
+                                    <option value="1">1行</option>
+                                    <option value="3">3行</option>
+                                    <option value="5">5行</option>
+                                    <option value="10">10行</option>
+                                    <option value="15">15行</option>
+                                    <option value="20">20行</option>
+                                </select>
+                            </div>
+                            <label class="switch-inline">
+                                <input type="checkbox" id="toggleContextButton">
+                                <span class="slider-inline round"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>

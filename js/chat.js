@@ -279,10 +279,18 @@ function addToHistory(question, answer) {
         answer: answer,
         timestamp: Date.now()
     };
-    
+
     chatHistory.push(historyItem);
     saveChatHistory();
     renderMessages();
+}
+
+function appendReplyLimitInstruction(originalMessage) {
+    const select = document.getElementById('replyLimitSelect');
+    if (!select) return originalMessage;
+    const limit = select.value;
+    if (!limit) return originalMessage;
+    return `${originalMessage}\n#回复不超过${limit}行`;
 }
 
 // 发送消息
@@ -311,8 +319,10 @@ async function sendMessage() {
 async function sendRequest(contextQuestion = null, contextAnswer = null) {
     const input = document.getElementById('messageInput');
     const message = input.value.trim();
-    
+
     if (!message) return;
+
+    const finalMessage = appendReplyLimitInstruction(message);
 
     input.value = '';
     handleInputChange();
@@ -328,7 +338,7 @@ async function sendRequest(contextQuestion = null, contextAnswer = null) {
         <div class="message-avatar">🧑‍💻</div>
         <div class="message-content">
             <div class="message-time">${new Date().toLocaleString('zh-CN')}</div>
-            <div class="message-text">${escapeHtml(message)}</div>
+            <div class="message-text">${escapeHtml(finalMessage)}</div>
         </div>
     `;
     messagesContainer.appendChild(userMessageDiv);
@@ -338,15 +348,15 @@ async function sendRequest(contextQuestion = null, contextAnswer = null) {
 
     try {
         // 调用AI接口
-        const response = await callAIAPI(message, contextQuestion, contextAnswer);
+        const response = await callAIAPI(finalMessage, contextQuestion, contextAnswer);
         removeLoadingMessage();
         
         // 添加到历史记录
-        addToHistory(message, response);
+        addToHistory(finalMessage, response);
     } catch (error) {
         removeLoadingMessage();
         const errorAnswer = '抱歉发生了错误，请稍后再试';
-        addToHistory(message, errorAnswer);
+        addToHistory(finalMessage, errorAnswer);
         console.error('API Error:', error);
     } finally {
         isWaitingResponse = false;
@@ -809,10 +819,9 @@ async function selectModel(modelName) {
 // 模型名到服务端ID映射
 const MODEL_ID_MAP = {
     GPT5Chat: 'gpt-5-chat-latest',
-    claude: 'claude-3-7-sonnet-20250219',
+    GPT5_1: 'gpt-5.1',
     gemini: 'gemini-2.5-pro-preview-03-25',
     o3: 'o3',
-    image: 'gpt-4o-image'
 };
 
 // 实际调用后端接口保存模型设置
@@ -923,16 +932,11 @@ async function logout() {
     authToken = null;
     try { storage.removeItem('chatAuth'); } catch (_) {}
 
-    // 重置输入框
-    const conversationIdInput = document.getElementById('conversationId');
-    const authTokenInput = document.getElementById('authToken');
-    if (conversationIdInput) conversationIdInput.value = '';
-    if (authTokenInput) authTokenInput.value = '';
-
     // 显示认证模态框并隐藏应用
     resetAuthUI();
     showAuthModal();
     setTimeout(() => {
+        const conversationIdInput = document.getElementById('conversationId');
         try { conversationIdInput && conversationIdInput.focus(); } catch (_) {}
     }, 0);
 
