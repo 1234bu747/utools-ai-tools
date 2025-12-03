@@ -22,7 +22,50 @@ let conversationId = null;
 let authToken = null;
 let isAuthenticated = false;
 
- const MAX_HISTORY_ITEMS = 200;
+ const MAX_HISTORY_ITEMS = 100;
+
+function normalizeMessageText(value) {
+    if (typeof value === 'string') return value;
+    if (value === null || typeof value === 'undefined') return '';
+    try {
+        return String(value);
+    } catch (_) {
+        return '';
+    }
+}
+
+function normalizeTimestamp(value, fallback) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    const num = Number(value);
+    if (Number.isFinite(num)) return num;
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) return parsed;
+    return typeof fallback === 'number' ? fallback : Date.now();
+}
+
+function normalizeHistoryItem(raw) {
+    const now = Date.now();
+    if (!raw || typeof raw !== 'object') {
+        return {
+            id: now.toString(),
+            question: '',
+            answer: '',
+            timestamp: now
+        };
+    }
+    const safeId = typeof raw.id === 'string'
+        ? raw.id
+        : (raw.id === null || typeof raw.id === 'undefined')
+            ? now.toString()
+            : String(raw.id);
+    return {
+        ...raw,
+        id: safeId,
+        question: normalizeMessageText(raw.question),
+        answer: normalizeMessageText(raw.answer),
+        timestamp: normalizeTimestamp(raw.timestamp, now)
+    };
+}
 
 // Storage 封装：优先使用 utools.dbStorage / utools.db，回退到 localStorage
 const storage = {
@@ -167,17 +210,24 @@ function initChatInterface() {
 // 加载聊天历史
 function loadChatHistory() {
     const saved = storage.getItem('chatHistory');
-    if (saved) {
-        try {
-            chatHistory = JSON.parse(saved) || [];
-        } catch (_) {
-            chatHistory = [];
-        }
-        if (Array.isArray(chatHistory) && chatHistory.length > MAX_HISTORY_ITEMS) {
-            // 仅保留最新的 MAX_HISTORY_ITEMS 条
-            chatHistory = chatHistory.slice(-MAX_HISTORY_ITEMS);
-        }
+    if (!saved) {
+        chatHistory = [];
+        return;
     }
+    let parsed;
+    try {
+        parsed = JSON.parse(saved);
+    } catch (_) {
+        parsed = [];
+    }
+    if (!Array.isArray(parsed)) {
+        parsed = [];
+    }
+    chatHistory = parsed.map(item => normalizeHistoryItem(item));
+    if (chatHistory.length > MAX_HISTORY_ITEMS) {
+        chatHistory = chatHistory.slice(-MAX_HISTORY_ITEMS);
+    }
+    saveChatHistory();
 }
 
 // 保存聊天历史
@@ -210,13 +260,15 @@ function saveChatHistory() {
 function renderMessages() {
     const messagesContainer = document.getElementById('chatMessages');
     messagesContainer.innerHTML = chatHistory.map((item, index) => {
-        const questionTime = new Date(item.timestamp).toLocaleString('zh-CN');
+        const safeQuestion = normalizeMessageText(item.question);
+        const safeAnswer = normalizeMessageText(item.answer);
+        const questionTime = new Date(normalizeTimestamp(item.timestamp)).toLocaleString('zh-CN');
         const questionHtml = `
             <div class="message user-message" data-index="${index}" data-type="question">
                 <div class="message-avatar">🧑‍💻</div>
                 <div class="message-content">
                     <div class="message-time">${questionTime}</div>
-                    <div class="message-text">${escapeHtml(item.question)}</div>
+                    <div class="message-text">${escapeHtml(safeQuestion)}</div>
                     <div class="message-actions">
                         <button class="message-action-btn" onclick="copyMessage(${index}, 'question')" title="复制">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -234,7 +286,7 @@ function renderMessages() {
                 </div>
             </div>
         `;
-        const htmlContent = md.render(item.answer);
+        const htmlContent = md.render(safeAnswer);
         
         const answerHtml = `
             <div class="message assistant-message" data-index="${index}" data-type="answer">
@@ -273,12 +325,12 @@ function renderMessages() {
 
 // 添加到历史记录
 function addToHistory(question, answer) {
-    const historyItem = {
+    const historyItem = normalizeHistoryItem({
         id: Date.now().toString(),
-        question: question,
-        answer: answer,
+        question,
+        answer,
         timestamp: Date.now()
-    };
+    });
 
     chatHistory.push(historyItem);
     saveChatHistory();

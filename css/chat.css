@@ -324,16 +324,33 @@ body {
     gap: 6px;
     color: var(--text-secondary);
     font-size: 12px;
+    position: relative;
 }
 
 .reply-limit-selector select {
-    padding: 4px 10px;
-    border-radius: 6px;
+    width: 70px;
+    padding: 4px 24px 4px 10px;
+    border-radius: 999px;
     border: 1px solid var(--border-color);
-    background-color: var(--bg-darker);
+    background: var(--input-bg);
     color: var(--text-primary);
     font-size: 12px;
     cursor: pointer;
+    appearance: none;
+    line-height: 1.4;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reply-limit-selector::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--text-secondary);
+    pointer-events: none;
 }
 
 .reply-limit-selector select:focus {
