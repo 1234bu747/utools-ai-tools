@@ -16,7 +16,7 @@ const md = new window.markdownit({
 // 全局变量
 let chatHistory = [];
 let isWaitingResponse = false;
-let currentModel = 'GPT5Chat';
+let currentModel = 'GPT5_2';
 let isExpanded = false;
 let conversationId = null;
 let authToken = null;
@@ -191,7 +191,7 @@ function initChatInterface() {
     // 初始化默认/持久化的模型选择
     try {
         const savedModel = storage.getItem('selectedModel');
-        const modelToApply = savedModel || currentModel || 'GPT5Chat';
+        const modelToApply = savedModel || currentModel || 'GPT5_2';
         currentModel = modelToApply;
         document.querySelectorAll('.model-btn').forEach(btn => {
             if (btn.dataset.model === modelToApply) {
@@ -202,7 +202,7 @@ function initChatInterface() {
         });
     } catch (e) {
         // 如果持久化存储不可用，至少默认选中 GPT5
-        const defaultBtn = document.querySelector('.model-btn[data-model="GPT5Chat"]');
+        const defaultBtn = document.querySelector('.model-btn[data-model="GPT5_2"]');
         if (defaultBtn) defaultBtn.classList.add('active');
     }
 }
@@ -373,6 +373,16 @@ async function sendRequest(contextQuestion = null, contextAnswer = null) {
     const message = input.value.trim();
 
     if (!message) return;
+
+    // 如果第一行是“原封不动”，直接回显用户问题
+    const firstLine = message.split(/\r?\n/)[0].trim();
+    if (firstLine === '原封不动') {
+        const finalMessage = appendReplyLimitInstruction(message);
+        input.value = '';
+        handleInputChange();
+        addToHistory(finalMessage, message);
+        return;
+    }
 
     const finalMessage = appendReplyLimitInstruction(message);
 
@@ -870,26 +880,43 @@ async function selectModel(modelName) {
 
 // 模型名到服务端ID映射
 const MODEL_ID_MAP = {
-    GPT5Chat: 'gpt-5-chat-latest',
-    GPT5_1: 'gpt-5.1',
-    gemini: 'gemini-2.5-pro-preview-03-25',
+    claude_sonnet: 'claude-sonnet-4-5-20250929',
+    GPT5_2: 'gpt-5.2',
+    claude_opus: 'claude-opus-4-5-20251101',
     o3: 'o3',
+    stock: 'gpt-4o-mini'
+};
+
+const DEFAULT_MODEL_PARAMS = {
+    chatPluginIds: [],
+    frequency_penalty: null,
+    max_tokens: 4096,
+    model: '',
+    presence_penalty: null,
+    requestMsgCount: 0,
+    speechVoice: 'Alloy',
+    temperature: 0.8
+};
+
+const MODEL_CUSTOM_PARAMS = {
+    stock: {
+        chatPluginIds: ['JuHeApiCommon_MrMVMj5'],
+        max_tokens: 2000,
+        model: 'gpt-4o-mini'
+    }
 };
 
 // 实际调用后端接口保存模型设置
 async function saveModelOnServer(modelName) {
     const serverModel = MODEL_ID_MAP[modelName] || modelName;
 
+    const customParams = MODEL_CUSTOM_PARAMS[modelName] || {};
     const paramsObj = {
-        chatPluginIds: [],
-        frequency_penalty: null,
-        max_tokens: 4096,
+        ...DEFAULT_MODEL_PARAMS,
         model: serverModel,
-        presence_penalty: null,
-        requestMsgCount: 0,
-        speechVoice: 'Alloy',
-        temperature: 0.8
+        ...customParams
     };
+    if (!paramsObj.model) paramsObj.model = serverModel;
 
     const payload = {
         id: isNaN(Number(conversationId)) ? conversationId : Number(conversationId),
@@ -1100,9 +1127,9 @@ async function verifyAuth(convId, token, isSilent) {
             token: token
         }));
         
-        // 登录成功后强制默认模型为 GPT5Chat（覆盖本地持久化）
-        try { storage.setItem('selectedModel', 'GPT5Chat'); } catch (_) {}
-        currentModel = 'GPT5Chat';
+        // 登录成功后强制默认模型为 GPT5_2（覆盖本地持久化）
+        try { storage.setItem('selectedModel', 'GPT5_2'); } catch (_) {}
+        currentModel = 'GPT5_2';
         
         // 重置登录按钮状态，避免下次显示时仍为加载状态
         resetAuthUI();
@@ -1114,7 +1141,7 @@ async function verifyAuth(convId, token, isSilent) {
         
         // 将模型设置同步到服务端（静默，不打断UI）
         try {
-            saveModelOnServer('GPT5Chat').catch(err => console.warn('初始化设置模型为GPT5Chat失败:', err));
+            saveModelOnServer('GPT5_2').catch(err => console.warn('初始化设置模型为GPT5_2失败:', err));
         } catch (_) {}
         
     } catch (error) {
